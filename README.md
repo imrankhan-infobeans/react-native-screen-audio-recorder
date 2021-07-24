@@ -18,8 +18,8 @@ const options: Options = {
   channels: 1,          // 1 or 2, default 1
   bitsPerSample: 16,    // 8 or 16, default 16
   audioSource: 6,       // android only (see below)
-  fileName: 'test.wav'  // default 'audio.wav'
-  fromMic: false,       // should record audio from microphone instead of device playback
+  fileName: 'test.wav', // default 'audio.wav'
+  fromMic: false        // should record audio from microphone instead of device playback
 };
 
 ScreenAudioRecorder.init(options);
