@@ -1,8 +1,29 @@
 import { NativeModules } from 'react-native';
 
 type ScreenAudioRecorderType = {
-  multiply(a: number, b: number): Promise<number>;
+  init: (options: Options) => void;
+  start: () => void;
+  stop: () => Promise<string>;
+  on: (event: 'data', callback: (data: string) => void) => void;
 };
+
+export interface Options {
+  sampleRate: number;
+  /**
+   * - `1 | 2`
+   */
+  channels: number;
+  /**
+   * - `8 | 16`
+   */
+  bitsPerSample: number;
+  /**
+   * - `6`
+   */
+  wavFile: string;
+
+  fromMic?: boolean;
+}
 
 const { ScreenAudioRecorder } = NativeModules;
 
