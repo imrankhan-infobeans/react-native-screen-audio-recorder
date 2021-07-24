@@ -1,6 +1,6 @@
 # react-native-screen-audio-recorder
 
-react native library to record audio played by device
+React Native library to record audio played by device
 
 ## Installation
 
@@ -10,13 +10,31 @@ npm install react-native-screen-audio-recorder
 
 ## Usage
 
-```js
-import ScreenAudioRecorder from "react-native-screen-audio-recorder";
+```ts
+import ScreenAudioRecorder, { Options } from 'react-native-screen-audio-recorder';
 
-// ...
+const options: Options = {
+  sampleRate: 16000,    // default 44100
+  channels: 1,          // 1 or 2, default 1
+  bitsPerSample: 16,    // 8 or 16, default 16
+  audioSource: 6,       // android only (see below)
+  fileName: 'test.wav'  // default 'audio.wav'
+  fromMic: false,       // should record audio from microphone instead of device playback
+};
 
-const result = await ScreenAudioRecorder.multiply(3, 7);
+ScreenAudioRecorder.init(options);
+
+ScreenAudioRecorder.start();
+
+ScreenAudioRecorder.on('data', data => {
+  // real time base64-encoded audio
+});
+
+const audioFile = await AudioRecord.stop();
+
 ```
+
+A full code example can be found at https://github.com/Nilsantos/react-native-screen-audio-recorder/blob/master/example/index.tsx
 
 ## Contributing
 
@@ -25,3 +43,6 @@ See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the 
 ## License
 
 MIT
+
+## Credits/References
+I'm not a native app developer. Most of the code is taken from [AudioRecord](https://developer.android.com/reference/android/media/AudioRecord.html)

@@ -20,7 +20,7 @@ export interface Options {
   /**
    * - `6`
    */
-  wavFile: string;
+  fileName: string;
 
   fromMic?: boolean;
 }
