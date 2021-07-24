@@ -34,7 +34,7 @@ const audioFile = await AudioRecord.stop();
 
 ```
 
-A full code example can be found at https://github.com/Nilsantos/react-native-screen-audio-recorder/blob/master/example/index.tsx
+A full code example can be found at https://github.com/Nilsantos/react-native-screen-audio-recorder/blob/master/example/src/App.tsx
 
 ## Contributing
 
@@ -45,4 +45,4 @@ See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the 
 MIT
 
 ## Credits/References
-I'm not a native app developer. Most of the code is taken from [AudioRecord](https://developer.android.com/reference/android/media/AudioRecord.html)
+The code was developed based on the library [react-native-audio-record](https://github.com/goodatlas/react-native-audio-record)
