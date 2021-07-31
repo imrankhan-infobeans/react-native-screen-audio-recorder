@@ -17,7 +17,6 @@ export interface Options {
   bitsPerSample: number;
   /**
    * File name. Default = "audio.wav"
-   * - `6`
    */
   fileName?: string;
   /**
