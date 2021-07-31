@@ -2,22 +2,12 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View, Button, PermissionsAndroid } from 'react-native';
 import Sound from 'react-native-sound';
-import ScreenAudioRecorder, {
-  Options,
-} from 'react-native-screen-audio-recorder';
+import ScreenAudioRecorder from 'react-native-screen-audio-recorder';
 
 export default function App() {
   const [audioFile, setAudioFile] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPause] = useState(true);
-
-  const options: Options = {
-    sampleRate: 16000,
-    channels: 1,
-    bitsPerSample: 16,
-    fileName: 'novo.wav',
-    fromMic: false,
-  };
 
   const requestRecordPermission = async () => {
     const recordPermission = await PermissionsAndroid.check(
@@ -43,7 +33,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    ScreenAudioRecorder.init(options);
+    ScreenAudioRecorder.init({
+      sampleRate: 16000,
+      channels: 1,
+      bitsPerSample: 16,
+      fileName: 'novo.wav',
+      fromMic: true,
+      saveFile: true,
+    });
+
+    ScreenAudioRecorder.on('data', (data) => {
+      console.log(data);
+    });
+
     requestRecordPermission();
   }, []);
 

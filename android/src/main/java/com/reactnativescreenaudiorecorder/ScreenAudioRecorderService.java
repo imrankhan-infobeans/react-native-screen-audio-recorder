@@ -1,5 +1,6 @@
 package com.reactnativescreenaudiorecorder;
 
+import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -10,6 +11,7 @@ import android.media.AudioPlaybackCaptureConfiguration;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
@@ -19,6 +21,7 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
+import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
@@ -29,8 +32,10 @@ import java.io.FileOutputStream;
 public class ScreenAudioRecorderService extends Service {
   private DeviceEventManagerModule.RCTDeviceEventEmitter eventEmitter;
   private MediaProjection mediaProjection;
+  private NotificationManager notificationManager;
 
   private AudioRecord recorder;
+  private boolean saveFile;
   private boolean isRecording;
   private int sampleRateInHz;
   private int channelConfig;
@@ -46,8 +51,6 @@ public class ScreenAudioRecorderService extends Service {
   private int SERVICE_ID = 123;
   private String NOTIFICATION_CHANNEL_ID = "AudioCapture channel";
 
-  @RequiresApi(api = Build.VERSION_CODES.O)
-  // @Nullable
   @Override
   public IBinder onBind(Intent intent) {
     isRecording = false;
@@ -56,93 +59,111 @@ public class ScreenAudioRecorderService extends Service {
     return new ScreenAudioRecorder();
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.O)
   private void createNotificationChannel() {
-    NotificationChannel serviceChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "Audio Capture Service Channel", NotificationManager.IMPORTANCE_DEFAULT);
-    NotificationManager manager = (NotificationManager) getSystemService(NotificationManager.class);
-    manager.createNotificationChannel(serviceChannel);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      NotificationChannel serviceChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "Audio Capture Service Channel", NotificationManager.IMPORTANCE_DEFAULT);
+      this.notificationManager = getSystemService(NotificationManager.class);
+      this.notificationManager.createNotificationChannel(serviceChannel);
+    }
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-  // @Nullable
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
     return START_STICKY;
   }
 
   public void startAudioCapture() {
-    if(mediaProjection != null) {
-      isRecording = true;
+    isRecording = true;
 
-      if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !fromMic) {
-        AudioPlaybackCaptureConfiguration config = new AudioPlaybackCaptureConfiguration
-          .Builder(mediaProjection)
-          .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
-          .build();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !fromMic) {
+      AudioPlaybackCaptureConfiguration config = new AudioPlaybackCaptureConfiguration
+        .Builder(mediaProjection)
+        .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+        .build();
 
-        recorder = new AudioRecord
-          .Builder()
-          .setAudioPlaybackCaptureConfig(config)
-          .setAudioFormat(
-            new AudioFormat
-              .Builder()
-              .setSampleRate(sampleRateInHz)
-              .setChannelMask(channelConfig)
-              .setEncoding(audioFormat)
-              .build()
-          )
-          .build();
-      }
-      else
-      {
-        recorder = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, sampleRateInHz, channelConfig, audioFormat, recordingBufferSize);
-      }
+      recorder = new AudioRecord
+        .Builder()
+        .setAudioPlaybackCaptureConfig(config)
+        .setAudioFormat(
+          new AudioFormat
+            .Builder()
+            .setSampleRate(sampleRateInHz)
+            .setChannelMask(channelConfig)
+            .setEncoding(audioFormat)
+            .build()
+        )
+        .build();
+    }
+    else
+    {
+      recorder = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, sampleRateInHz, channelConfig, audioFormat, recordingBufferSize);
+    }
 
-      recorder.startRecording();
+    recorder.startRecording();
 
-      Thread recordingThread = new Thread(new Runnable() {
-        public void run() {
-          try {
-            int bytesRead;
-            int count = 0;
-            String base64Data;
-            byte[] buffer = new byte[bufferSize];
-            FileOutputStream os = new FileOutputStream(tmpFile);
+    Thread recordingThread = new Thread(new Runnable() {
+      public void run() {
+        try {
+          int bytesRead;
+          int count = 0;
+          String base64Data;
+          byte[] buffer = new byte[bufferSize];
+          FileOutputStream os = null;
 
-            while (isRecording) {
-              bytesRead = recorder.read(buffer, 0, buffer.length);
+          if(saveFile) {
+            os = new FileOutputStream(tmpFile);
+          }
 
-              // skip first 2 buffers to eliminate "click sound"
-              if (bytesRead > 0 && ++count > 2) {
-                base64Data = android.util.Base64.encodeToString(buffer, Base64.NO_WRAP);
-                Log.d("ScreenAudioRecorder", base64Data);
-                eventEmitter.emit("data", base64Data);
+          while (isRecording) {
+            bytesRead = recorder.read(buffer, 0, buffer.length);
+
+            // skip first 2 buffers to eliminate "click sound"
+            if (bytesRead > 0 && ++count > 2) {
+              if(os != null) {
                 os.write(buffer, 0, bytesRead);
               }
-            }
 
-            if(android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !fromMic)
-            {
-              mediaProjection.stop();
+              base64Data = Base64.encodeToString(buffer, Base64.NO_WRAP);
+              Log.d("ScreenAudioRecorder", base64Data);
+              eventEmitter.emit("data", base64Data);
             }
+          }
 
-            recorder.stop();
+          if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !fromMic)
+          {
+            mediaProjection.stop();
+          }
+
+          recorder.stop();
+
+          if(os != null) {
             os.close();
             saveAsWav();
-            stopSelf();
             stopRecordingPromise.resolve(outFile);
-          } catch (Exception e) {
-            e.printStackTrace();
           }
-        }
-      });
+          else
+          {
+            stopRecordingPromise.resolve(null);
+          }
 
-      recordingThread.start();
-    }
+
+
+          stopSelf();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+    });
+
+    recordingThread.start();
   }
 
   public void stopAudioCapture(Promise promise) {
-    stopRecordingPromise = promise;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      notificationManager.deleteNotificationChannel(NOTIFICATION_CHANNEL_ID);
+    }
+
+    this.stopRecordingPromise = promise;
     isRecording = false;
   }
 
@@ -255,12 +276,16 @@ public class ScreenAudioRecorderService extends Service {
     this.outFile = outFile;
   };
 
-  public void setBufferSize(int bufferSize) {
-    this.bufferSize = bufferSize;
+  public void setSaveFile(Boolean saveFile){
+    this.saveFile = saveFile;
+  };
+
+  public void calcBufferSize() {
+    this.bufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
   }
 
-  public void setRecordingBufferSize(int recordingBufferSize) {
-    this.recordingBufferSize = recordingBufferSize;
+  public void calcRecordingBufferSize() {
+    this.recordingBufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat) * 3;
   }
 
   public void setEventEmitter(DeviceEventManagerModule.RCTDeviceEventEmitter eventEmitter) {
