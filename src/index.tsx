@@ -4,17 +4,17 @@ export interface Options {
   /**
    * Sample rate in hz. Default = 44100
    */
-  sampleRate: number;
+  sampleRate?: number;
   /**
    * Channels, 1 = MONO, 2 = STEREO. Default = 1
    * - `1 | 2`
    */
-  channels: number;
+  channels?: number;
   /**
    * Bits per sample. Default = 16
    * - `8 | 16`
    */
-  bitsPerSample: number;
+  bitsPerSample?: number;
   /**
    * File name. Default = "audio.wav"
    */
@@ -36,16 +36,17 @@ type ScreenAudioRecorderType = {
   on: (event: 'data', callback: (data: string) => void) => void;
 };
 
-const { ScreenAudioRecorder } = NativeModules;
-const EventEmitter = new NativeEventEmitter(ScreenAudioRecorder);
+const AudioRecorder = NativeModules.ScreenAudioRecorder;
+const EventEmitter = new NativeEventEmitter(AudioRecorder);
 const eventsMap = {
   data: 'data',
 };
 
-const AudioRecord: ScreenAudioRecorderType = {
-  init: (options: Options) => ScreenAudioRecorder.init(options),
-  start: () => ScreenAudioRecorder.start(),
-  stop: () => ScreenAudioRecorder.stop(),
+
+const ScreenAudioRecorder : ScreenAudioRecorderType =  {
+  init: (options: Options) => AudioRecorder.init(options),
+  start: () => AudioRecorder.start(),
+  stop: () => AudioRecorder.stop(),
   on: (event, callback) => {
     const nativeEvent = eventsMap[event];
 
@@ -56,6 +57,6 @@ const AudioRecord: ScreenAudioRecorderType = {
     EventEmitter.removeAllListeners(nativeEvent);
     return EventEmitter.addListener(nativeEvent, callback);
   },
-};
+} 
 
-export default AudioRecord;
+export default ScreenAudioRecorder;
