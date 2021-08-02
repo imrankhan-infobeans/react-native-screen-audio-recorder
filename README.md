@@ -54,6 +54,7 @@ A full code example can be found at https://github.com/Nilsantos/react-native-sc
 
 <table>
   <tr>
+    <td align="center"><a href="https://github.com/Nilsantos"><img src="https://avatars.githubusercontent.com/u/44170812?v=4" width="100px;" alt="Nilsantos"/><br><sub><b>Nilsantos</b></sub></a></td>
     <td align="center"><a href="https://github.com/Mdiaas"><img src="https://avatars.githubusercontent.com/u/49025512?v=4" width="100px;" alt="Mdiaas"/><br><sub><b>Mdiaas</b></sub></a></td>
   </tr>
 </table>
