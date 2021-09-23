@@ -16,6 +16,10 @@ export interface Options {
    */
   bitsPerSample?: number;
   /**
+   * Interval in miliseconds to receive audio base64 data to "on" event. Default = 0
+   */
+  audioEmitInterval?: number;
+  /**
    * File name. Default = "audio.wav"
    */
   fileName?: string;
@@ -42,8 +46,7 @@ const eventsMap = {
   data: 'data',
 };
 
-
-const ScreenAudioRecorder : ScreenAudioRecorderType =  {
+const ScreenAudioRecorder: ScreenAudioRecorderType = {
   init: (options: Options) => AudioRecorder.init(options),
   start: () => AudioRecorder.start(),
   stop: () => AudioRecorder.stop(),
@@ -57,6 +60,6 @@ const ScreenAudioRecorder : ScreenAudioRecorderType =  {
     EventEmitter.removeAllListeners(nativeEvent);
     return EventEmitter.addListener(nativeEvent, callback);
   },
-} 
+};
 
 export default ScreenAudioRecorder;

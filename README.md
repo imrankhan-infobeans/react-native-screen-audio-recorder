@@ -20,8 +20,9 @@ const options: Options = {
   channels: 1,
   bitsPerSample: 16,
   fileName: 'novo.wav',
-  fromMic: true,
-  saveFile: true,
+  fromMic: false,
+  saveFile: false,
+  audioEmitInterval: 1000
 };
 
 ScreenAudioRecorder.init(options);
@@ -46,6 +47,7 @@ A full code example can be found at https://github.com/Nilsantos/react-native-sc
 |sampleRate| Sample Rate in hz. | 44100 |
 |channels| Channels, 1 = MONO, 2 = STEREO. | 1 |
 |bitsPerSample| Bits per sample. | 16 |
+|audioEmitInterval| Interval in miliseconds to receive audio base64 data to "on" event. | 0 |
 |fileName| Output file name. (Don't forget ".wav") | audio.wav |
 |fromMic| Record audio from microphone instead of device. For android before 10 even if the option is true, the audio will be captured from the microphone, because android doesn't support. | false |
 |saveFile | The captured audio must be recorded. | false |

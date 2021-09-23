@@ -66,6 +66,11 @@ public class ScreenAudioRecorderModule extends ReactContextBaseJavaModule implem
           }
         }
 
+        recordService.setAudioEmitInterval(100);
+        if (options.hasKey("audioEmitInterval")) {
+          recordService.setAudioEmitInterval(options.getInt("audioEmitInterval"));
+        }
+
         Boolean fromMic = false;
         recordService.setFromMic(false);
         if (options.hasKey("fromMic")) {

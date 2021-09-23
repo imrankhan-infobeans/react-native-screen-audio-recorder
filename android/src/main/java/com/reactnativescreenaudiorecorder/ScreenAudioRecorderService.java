@@ -45,6 +45,7 @@ public class ScreenAudioRecorderService extends Service {
   private Boolean fromMic;
   private String tmpFile;
   private String outFile;
+  private int audioEmitInterval;
 
   private Promise stopRecordingPromise;
 
@@ -109,6 +110,7 @@ public class ScreenAudioRecorderService extends Service {
           String base64Data;
           byte[] buffer = new byte[bufferSize];
           FileOutputStream os = null;
+          long actualTime = System.currentTimeMillis();
 
           if(saveFile) {
             os = new FileOutputStream(tmpFile);
@@ -124,8 +126,14 @@ public class ScreenAudioRecorderService extends Service {
               }
 
               base64Data = Base64.encodeToString(buffer, Base64.NO_WRAP);
-              Log.d("ScreenAudioRecorder", base64Data);
-              eventEmitter.emit("data", base64Data);
+
+              if(System.currentTimeMillis() > actualTime + audioEmitInterval)
+              {
+                //Log.d("ScreenAudioRecorder", base64Data);
+
+                actualTime = System.currentTimeMillis();
+                eventEmitter.emit("data", base64Data);
+              }
             }
           }
 
@@ -159,12 +167,11 @@ public class ScreenAudioRecorderService extends Service {
   }
 
   public void stopAudioCapture(Promise promise) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      notificationManager.deleteNotificationChannel(NOTIFICATION_CHANNEL_ID);
-    }
-
     this.stopRecordingPromise = promise;
     isRecording = false;
+
+    stopForeground(true);
+    stopSelf();
   }
 
   private void saveAsWav() {
@@ -266,6 +273,10 @@ public class ScreenAudioRecorderService extends Service {
 
   public void setAudioFormat(int audioFormat){
     this.audioFormat = audioFormat;
+  }
+
+  public void setAudioEmitInterval(int audioEmitInterval){
+    this.audioEmitInterval = audioEmitInterval;
   }
 
   public void setTmpFile(String tmpFile){
