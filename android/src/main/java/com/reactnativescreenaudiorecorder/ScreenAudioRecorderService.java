@@ -108,7 +108,10 @@ public class ScreenAudioRecorderService extends Service {
           int bytesRead;
           int count = 0;
           String base64Data;
+          byte[] fullBuffer = null;
+          byte[] auxBuffer = null;
           byte[] buffer = new byte[bufferSize];
+
           FileOutputStream os = null;
           long actualTime = System.currentTimeMillis();
 
@@ -125,13 +128,30 @@ public class ScreenAudioRecorderService extends Service {
                 os.write(buffer, 0, bytesRead);
               }
 
-              base64Data = Base64.encodeToString(buffer, Base64.NO_WRAP);
-
-              if(System.currentTimeMillis() > actualTime + audioEmitInterval)
+              if(audioEmitInterval > 0)
               {
-                //Log.d("ScreenAudioRecorder", base64Data);
+                if(fullBuffer == null) {
+                  fullBuffer = new byte[buffer.length];
+                  fullBuffer = buffer.clone();
+                }
+                else {
+                  auxBuffer = fullBuffer.clone();
+                  fullBuffer = new byte[buffer.length + fullBuffer.length];
+                  System.arraycopy(auxBuffer, 0, fullBuffer, 0, auxBuffer.length);
+                  System.arraycopy(buffer, 0, fullBuffer, auxBuffer.length, buffer.length);
+                }
 
-                actualTime = System.currentTimeMillis();
+                if(System.currentTimeMillis() > actualTime + audioEmitInterval)
+                {
+                  base64Data = Base64.encodeToString(fullBuffer, Base64.NO_WRAP);
+                  actualTime = System.currentTimeMillis();
+                  eventEmitter.emit("data", base64Data);
+                  fullBuffer = null;
+                }
+              }
+              else
+              {
+                base64Data = Base64.encodeToString(buffer, Base64.NO_WRAP);
                 eventEmitter.emit("data", base64Data);
               }
             }

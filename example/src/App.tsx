@@ -39,8 +39,8 @@ export default function App() {
       bitsPerSample: 16,
       fileName: 'novo.wav',
       fromMic: false,
-      saveFile: true,
-      audioEmitInterval: 10000,
+      saveFile: false,
+      audioEmitInterval: 1000,
     });
 
     ScreenAudioRecorder.on('data', (data) => {
