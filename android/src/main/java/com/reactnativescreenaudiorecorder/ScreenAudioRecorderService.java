@@ -163,6 +163,7 @@ public class ScreenAudioRecorderService extends Service {
           }
 
           recorder.stop();
+          recorder.release();
 
           if(os != null) {
             os.close();
