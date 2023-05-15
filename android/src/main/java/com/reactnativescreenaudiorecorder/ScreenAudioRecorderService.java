@@ -55,8 +55,8 @@ public class ScreenAudioRecorderService extends Service {
   @Override
   public IBinder onBind(Intent intent) {
     isRecording = false;
-    createNotificationChannel();
-    startForeground(SERVICE_ID, new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).build());
+   // createNotificationChannel();
+    //startForeground(SERVICE_ID, new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).build());
     return new ScreenAudioRecorder();
   }
 
