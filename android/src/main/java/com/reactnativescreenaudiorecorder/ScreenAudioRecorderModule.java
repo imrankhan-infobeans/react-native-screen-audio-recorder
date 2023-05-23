@@ -32,7 +32,8 @@ public class ScreenAudioRecorderModule extends ReactContextBaseJavaModule implem
     private MediaProjection mediaProjection;
     private ScreenAudioRecorderService recordService;
     private ReadableMap options;
-
+private boolean isStarted = false;
+  
     public static final int MEDIA_PROJECTION_REQUEST_CODE = 1001;
 
     public ScreenAudioRecorderModule(ReactApplicationContext reactContext) {
@@ -139,13 +140,17 @@ public class ScreenAudioRecorderModule extends ReactContextBaseJavaModule implem
 
     @ReactMethod
     public void start() {
+      this.isStarted =true;
       Intent intent = new Intent(getCurrentActivity(), ScreenAudioRecorderService.class);
       getCurrentActivity().bindService(intent, connection,  getCurrentActivity().BIND_AUTO_CREATE);
     }
 
     @ReactMethod
     public void stop(Promise promise) {
+       if (this.isStarted) {
+        this.isStarted =false;
         recordService.stopAudioCapture(promise);
         Objects.requireNonNull(getCurrentActivity()).unbindService(connection);
+       }
     }
 }
