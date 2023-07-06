@@ -28,6 +28,8 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import com.facebook.react.bridge.Arguments;	
+import com.facebook.react.bridge.WritableMap;	
 
 public class ScreenAudioRecorderService extends Service {
   private DeviceEventManagerModule.RCTDeviceEventEmitter eventEmitter;
@@ -67,7 +69,42 @@ public class ScreenAudioRecorderService extends Service {
       this.notificationManager.createNotificationChannel(serviceChannel);
     }
   }
-
+	
+  public static double REFERENCE = 0.00002;	
+  public double getNoiseLevel(byte[] buffer, int bufferSize)	
+  {	
+    //making the buffer bigger....	
+    bufferSize=bufferSize*8;	
+    double average = 0.0;	
+    for (short s : buffer)	
+    {	
+      if(s>0)	
+      {	
+        average += Math.abs(s);	
+      }	
+      else	
+      {	
+        bufferSize--;	
+      }	
+    }	
+    //x=max;	
+    double x = average/bufferSize;	
+    double db=0;	
+    if (x==0){	
+    }	
+    // calculating the pascal pressure based on the idea that the max amplitude (between 0 and 32767) is	
+    // relative to the pressure	
+    double pressure = x/51805.5336; //the value 51805.5336 can be derived from asuming that x=32767=0.6325 Pa and x=1 = 0.00002 Pa (the reference value)	
+    db = 20 * Math.log10(pressure/REFERENCE);	
+    db = Math.floor(db * 100);	
+    if(db>0)	
+    {	
+      Log.d("returning DB", ""+db);	
+      return db;	
+    }	
+    return 0;	
+  }
+  
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
     return START_STICKY;
@@ -122,6 +159,10 @@ public class ScreenAudioRecorderService extends Service {
           while (isRecording) {
             bytesRead = recorder.read(buffer, 0, buffer.length);
 
+
+double levelValue=  getNoiseLevel(buffer, buffer.length);	
+           // Log.d("Buffer levelValue",levelValue+"");
+            
             // skip first 2 buffers to eliminate "click sound"
             if (bytesRead > 0 && ++count > 2) {
               if(os != null) {
@@ -145,7 +186,12 @@ public class ScreenAudioRecorderService extends Service {
                 {
                   base64Data = Base64.encodeToString(fullBuffer, Base64.NO_WRAP);
                   actualTime = System.currentTimeMillis();
-                  eventEmitter.emit("data", base64Data);
+                  
+                  WritableMap map = Arguments.createMap();	
+                  map.putString("base64Data", base64Data);	
+                  map.putString("levelValue", String.valueOf(levelValue));	
+
+                  eventEmitter.emit("data", map);
                   fullBuffer = null;
                 }
               }
