@@ -70,40 +70,6 @@ public class ScreenAudioRecorderService extends Service {
     }
   }
 	
-  public static double REFERENCE = 0.00002;	
-  public double getNoiseLevel(byte[] buffer, int bufferSize)	
-  {	
-    //making the buffer bigger....	
-    bufferSize=bufferSize*8;	
-    double average = 0.0;	
-    for (short s : buffer)	
-    {	
-      if(s>0)	
-      {	
-        average += Math.abs(s);	
-      }	
-      else	
-      {	
-        bufferSize--;	
-      }	
-    }	
-    //x=max;	
-    double x = average/bufferSize;	
-    double db=0;	
-    if (x==0){	
-    }	
-    // calculating the pascal pressure based on the idea that the max amplitude (between 0 and 32767) is	
-    // relative to the pressure	
-    double pressure = x/51805.5336; //the value 51805.5336 can be derived from asuming that x=32767=0.6325 Pa and x=1 = 0.00002 Pa (the reference value)	
-    db = 20 * Math.log10(pressure/REFERENCE);	
-    db = Math.floor(db * 100);	
-    if(db>0)	
-    {	
-      Log.d("returning DB", ""+db);	
-      return db;	
-    }	
-    return 0;	
-  }
   
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
@@ -158,10 +124,6 @@ public class ScreenAudioRecorderService extends Service {
 
           while (isRecording) {
             bytesRead = recorder.read(buffer, 0, buffer.length);
-
-
-double levelValue=  getNoiseLevel(buffer, buffer.length);	
-           // Log.d("Buffer levelValue",levelValue+"");
             
             // skip first 2 buffers to eliminate "click sound"
             if (bytesRead > 0 && ++count > 2) {
@@ -184,12 +146,16 @@ double levelValue=  getNoiseLevel(buffer, buffer.length);
 
                 if(System.currentTimeMillis() > actualTime + audioEmitInterval)
                 {
+
+                    int rmsDB = getRMSDecibels();	
+                  Log.d("VU Meter","RMS in DB " + rmsDB);
+                  
                   base64Data = Base64.encodeToString(fullBuffer, Base64.NO_WRAP);
                   actualTime = System.currentTimeMillis();
                   
                   WritableMap map = Arguments.createMap();	
                   map.putString("base64Data", base64Data);	
-                  map.putString("levelValue", String.valueOf(levelValue));	
+                 map.putInt("rmsDecibels", rmsDB);
 
                   eventEmitter.emit("data", map);
                   fullBuffer = null;
@@ -330,6 +296,27 @@ double levelValue=  getNoiseLevel(buffer, buffer.length);
     file.delete();
   }
 
+   private int getRMSDecibels() {	
+    short[] buffer = new short[bufferSize];	
+    int length_read = recorder.read(buffer, 0, buffer.length);	
+    int mRMS = getRMS(buffer, length_read);	
+    double rmsDB = 20*Math.log10(mRMS / 20);	
+    int rmsDBFloored = (int) Math.floor(rmsDB);	
+    if(rmsDBFloored < 0) {	
+      rmsDBFloored = 0;	
+    }	
+    return  rmsDBFloored;	
+  }	
+  private int getRMS( short[] buffer, int length ) {	
+    double accumAbs = 0.0;	
+    for (int i = 0; i < length; i++) {	
+      double val = (double) buffer[i];	
+      accumAbs += (val * val);	
+    }	
+    int mRMS = (int) Math.sqrt((accumAbs / (double) length));	
+    return mRMS;	
+  }
+  
   public void setSampleRateInHz(int sampleRateInHz){
     this.sampleRateInHz = sampleRateInHz;
   }
