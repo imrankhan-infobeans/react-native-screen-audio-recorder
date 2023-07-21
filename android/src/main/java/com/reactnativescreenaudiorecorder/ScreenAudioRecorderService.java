@@ -1,4 +1,5 @@
 package com.reactnativescreenaudiorecorder;
+import static java.lang.Math.abs;	
 
 import android.app.Activity;
 import android.app.NotificationChannel;
@@ -147,7 +148,7 @@ public class ScreenAudioRecorderService extends Service {
                 if(System.currentTimeMillis() > actualTime + audioEmitInterval)
                 {
 
-                    int rmsDB = getRMSDecibels();	
+                  int rmsDB = getRMSDecibels(fullBuffer);	
                   Log.d("VU Meter","RMS in DB " + rmsDB);
                   
                   base64Data = Base64.encodeToString(fullBuffer, Base64.NO_WRAP);
@@ -296,25 +297,34 @@ public class ScreenAudioRecorderService extends Service {
     file.delete();
   }
 
-   private int getRMSDecibels() {	
-    short[] buffer = new short[bufferSize];	
-    int length_read = recorder.read(buffer, 0, buffer.length);	
-    int mRMS = getRMS(buffer, length_read);	
-    double rmsDB = 20*Math.log10(mRMS / 20);	
+  private int getRMSDecibels(byte[] audioBuffer) {	
+    short[] shortBuffer = byteArrayToShortArray(audioBuffer);	
+    int mRMS = getRMS(shortBuffer);	
+    double rmsDB = 20 * Math.log10(mRMS / 20);	
     int rmsDBFloored = (int) Math.floor(rmsDB);	
     if(rmsDBFloored < 0) {	
       rmsDBFloored = 0;	
     }	
     return  rmsDBFloored;	
   }	
-  private int getRMS( short[] buffer, int length ) {	
+  private int getRMS(short[] buffer) {	
     double accumAbs = 0.0;	
-    for (int i = 0; i < length; i++) {	
+    for (int i = 0; i < buffer.length; i++) {	
       double val = (double) buffer[i];	
       accumAbs += (val * val);	
     }	
-    int mRMS = (int) Math.sqrt((accumAbs / (double) length));	
+    int mRMS = (int) Math.sqrt((accumAbs / (double) buffer.length));	
     return mRMS;	
+  }
+
+   private static short[] byteArrayToShortArray(byte[] byteArray) {	
+    int shortArrayLength = byteArray.length / 2;	
+    short[] shortArray = new short[shortArrayLength];	
+    for(int i = 0; i < shortArrayLength; i++)	
+    {	
+      shortArray[i] = (short) (byteArray[2 * i] & 0xFF | (byteArray[2 * i + 1] & 0xFF) << 8);	
+    }	
+    return shortArray;	
   }
   
   public void setSampleRateInHz(int sampleRateInHz){
