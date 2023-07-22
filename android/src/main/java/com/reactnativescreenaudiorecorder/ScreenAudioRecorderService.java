@@ -39,6 +39,7 @@ public class ScreenAudioRecorderService extends Service {
 
   private AudioRecord recorder;
   private boolean saveFile;
+  private boolean returnAudioChunk;
   private boolean isRecording;
   private int sampleRateInHz;
   private int channelConfig;
@@ -104,7 +105,13 @@ public class ScreenAudioRecorderService extends Service {
       recorder = new AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, sampleRateInHz, channelConfig, audioFormat, recordingBufferSize);
     }
 
-    recorder.startRecording();
+    if(recorder != null) {	
+      recorder.startRecording();	
+    }	
+    else {	
+      isRecording = false;	
+      return;	
+    }
 
     Thread recordingThread = new Thread(new Runnable() {
       public void run() {
@@ -155,8 +162,14 @@ public class ScreenAudioRecorderService extends Service {
                   actualTime = System.currentTimeMillis();
                   
                   WritableMap map = Arguments.createMap();	
-                  map.putString("base64Data", base64Data);	
-                 map.putInt("rmsDecibels", rmsDB);
+                     if(returnAudioChunk) {	
+                    map.putString("base64Data", base64Data);	
+                    Log.d("VU Meter","returning chunk");	
+                  }	
+                  else {	
+                    Log.d("VU Meter","not returning chunk");	
+                  }	
+                  map.putInt("rmsDecibels", rmsDB);
 
                   eventEmitter.emit("data", map);
                   fullBuffer = null;
@@ -315,9 +328,8 @@ public class ScreenAudioRecorderService extends Service {
     }	
     int mRMS = (int) Math.sqrt((accumAbs / (double) buffer.length));	
     return mRMS;	
-  }
-
-   private static short[] byteArrayToShortArray(byte[] byteArray) {	
+  }	
+  private static short[] byteArrayToShortArray(byte[] byteArray) {	
     int shortArrayLength = byteArray.length / 2;	
     short[] shortArray = new short[shortArrayLength];	
     for(int i = 0; i < shortArrayLength; i++)	
@@ -355,6 +367,12 @@ public class ScreenAudioRecorderService extends Service {
     this.saveFile = saveFile;
   };
 
+   public void setReturnAudioChunk(Boolean returnAudioChunk){	
+    Log.d("VU Meter", "Should Return Audio Chunk" + returnAudioChunk);	
+    this.returnAudioChunk = returnAudioChunk;	
+  };	
+
+  
   public void calcBufferSize() {
     this.bufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
   }
