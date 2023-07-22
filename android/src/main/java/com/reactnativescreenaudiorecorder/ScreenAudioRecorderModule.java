@@ -91,6 +91,10 @@ private boolean isStarted = false;
           recordService.setSaveFile(options.getBoolean("saveFile"));
         }
 
+         recordService.setReturnAudioChunk(false);	
+        if (options.hasKey("returnAudioChunk")) {	
+          recordService.setReturnAudioChunk(options.getBoolean("returnAudioChunk"));
+
         recordService.calcBufferSize();
         recordService.calcRecordingBufferSize();
         recordService.setTmpFile(documentDirectoryPath + "/" + "temp.pcm");
