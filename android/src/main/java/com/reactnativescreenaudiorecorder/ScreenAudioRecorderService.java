@@ -154,12 +154,17 @@ public class ScreenAudioRecorderService extends Service {
 
                 if(System.currentTimeMillis() > actualTime + audioEmitInterval)
                 {
-
-                  int rmsDB = getRMSDecibels(fullBuffer);	
-                  Log.d("VU Meter","RMS in DB " + rmsDB);
-                  
                   base64Data = Base64.encodeToString(fullBuffer, Base64.NO_WRAP);
                   actualTime = System.currentTimeMillis();
+                  
+                  int rmsDB = 0;
+                  try {
+                    rmsDB = getRMSDecibels(fullBuffer);
+                    Log.d("VU Meter","Value of rmsDB: " + rmsDB);
+                  }	
+                  catch (Exception e) {
+                    Log.d("VU Meter","Error in getting rmsDB: " + e.getMessage());
+                  }
                   
                   WritableMap map = Arguments.createMap();	
                      if(returnAudioChunk) {	
@@ -337,15 +342,16 @@ public class ScreenAudioRecorderService extends Service {
     return mRMS;
   }
   
-  // private int getRMS(short[] buffer) {	
-  //   double accumAbs = 0.0;	
-  //   for (int i = 0; i < buffer.length; i++) {	
-  //     double val = (double) buffer[i];	
-  //     accumAbs += (val * val);	
-  //   }	
-  //   int mRMS = (int) Math.sqrt((accumAbs / (double) buffer.length));	
-  //   return mRMS;	
-  // }	
+  /*
+  private int getRMS(short[] buffer) {	
+    double accumAbs = 0.0;	
+    for (int i = 0; i < buffer.length; i++) {	
+      double val = (double) buffer[i];	
+      accumAbs += (val * val);	
+    }	
+    int mRMS = (int) Math.sqrt((accumAbs / (double) buffer.length));	
+    return mRMS;	
+  }	
   private static short[] byteArrayToShortArray(byte[] byteArray) {	
     int shortArrayLength = byteArray.length / 2;	
     short[] shortArray = new short[shortArrayLength];	
@@ -355,6 +361,7 @@ public class ScreenAudioRecorderService extends Service {
     }	
     return shortArray;	
   }
+  */
   
   public void setSampleRateInHz(int sampleRateInHz){
     this.sampleRateInHz = sampleRateInHz;
@@ -385,7 +392,7 @@ public class ScreenAudioRecorderService extends Service {
   };
 
    public void setReturnAudioChunk(Boolean returnAudioChunk){	
-    Log.d("VU Meter", "Should Return Audio Chunk" + returnAudioChunk);	
+    Log.d("VU Meter", "Should Return Audio Chunk: " + returnAudioChunk);	
     this.returnAudioChunk = returnAudioChunk;	
   };	
 
