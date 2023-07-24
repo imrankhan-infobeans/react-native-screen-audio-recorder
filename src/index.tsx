@@ -31,6 +31,11 @@ export interface Options {
    * Save recorded audio. Default = false
    */
   saveFile?: boolean;
+
+  /**
+     * Return Audio Chunk. Default = false
+     */
+    returnAudioChunk?: boolean;
 }
 
 type ScreenAudioRecorderType = {
