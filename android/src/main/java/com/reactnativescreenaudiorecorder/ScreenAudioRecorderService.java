@@ -310,25 +310,42 @@ public class ScreenAudioRecorderService extends Service {
     file.delete();
   }
 
-  private int getRMSDecibels(byte[] audioBuffer) {	
-    short[] shortBuffer = byteArrayToShortArray(audioBuffer);	
-    int mRMS = getRMS(shortBuffer);	
-    double rmsDB = 20 * Math.log10(mRMS / 20);	
-    int rmsDBFloored = (int) Math.floor(rmsDB);	
-    if(rmsDBFloored < 0) {	
-      rmsDBFloored = 0;	
-    }	
-    return  rmsDBFloored;	
-  }	
-  private int getRMS(short[] buffer) {	
-    double accumAbs = 0.0;	
-    for (int i = 0; i < buffer.length; i++) {	
-      double val = (double) buffer[i];	
-      accumAbs += (val * val);	
-    }	
-    int mRMS = (int) Math.sqrt((accumAbs / (double) buffer.length));	
-    return mRMS;	
-  }	
+  private int getRMSDecibels(byte[] audioBuffer) {
+    int mRMS = getRMS(audioBuffer);
+    double rmsDB = 20 * Math.log10(mRMS / 20);
+    int rmsDBFloored = (int) Math.floor(rmsDB);
+    if(rmsDBFloored < 0) {
+      rmsDBFloored = 0;
+    }
+    return  rmsDBFloored;
+  }
+
+  private int getRMS(byte[] byteArray) {
+    double accumAbs = 0.0;
+
+    int loopLength = byteArray.length / 2;
+
+    for(int i = 0; i < loopLength; i++)
+    {
+      short sample = (short) (byteArray[2 * i] & 0xFF | (byteArray[2 * i + 1] & 0xFF) << 8);
+
+      double val = (double) sample;
+      accumAbs += (val * val);
+    }
+
+    int mRMS = (int) Math.sqrt((accumAbs / (double) loopLength));
+    return mRMS;
+  }
+  
+  // private int getRMS(short[] buffer) {	
+  //   double accumAbs = 0.0;	
+  //   for (int i = 0; i < buffer.length; i++) {	
+  //     double val = (double) buffer[i];	
+  //     accumAbs += (val * val);	
+  //   }	
+  //   int mRMS = (int) Math.sqrt((accumAbs / (double) buffer.length));	
+  //   return mRMS;	
+  // }	
   private static short[] byteArrayToShortArray(byte[] byteArray) {	
     int shortArrayLength = byteArray.length / 2;	
     short[] shortArray = new short[shortArrayLength];	
